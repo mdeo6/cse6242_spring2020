@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Project Work</title>
+</head>
+
+<style>
+    clip-path {
+        fill: none;
+        stroke: #ffffff;
+        stroke-width: 1px;
+    }
+
+    path
+    {
+        fill: none;
+        stroke: #fff;
+
+    }
+    body {
+        background: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        z-index: 10;
+    }
+    path.line
+    {
+        fill: none;
+        stroke: #c71d21;
+    }
+    .h1 {
+        color: #ffffff;
+        fill: #ffffff;
+        font: 24px 'LeagueGothicRegular';
+        font-family: Calibri;
+    }
+
+    .h2 {
+        color: #ffffff;
+        font: 24px 'LeagueGothicRegular';
+        font-family: Calibri;
+    }
+    .caption {
+        color: #ffffff;
+        font: 24px 'LeagueGothicRegular';
+        font-family: Calibri;
+    }
+
+    .axlabel {
+        font: 12px 'LeagueGothicRegular';
+        fill: #ffffff;
+        font-family: Calibri;
+    }
+    .axticks {
+        text-shadow: none;
+        stroke: white;
+        font: 13px 'LeagueGothicRegular';
+        font-family: Calibri;
+    }
+
+
+</style>
+<body>
+<div class="content1" id="my_dataviz"></div>
+</body>
+
+<script src="../lib/d3.v4.js"></script>
+<script src="../lib/d3-scale-chromatic.v1.min.js"></script>
+
+
+<script>
+
+    function getParamValue(paramName)
+    {
+        var url = window.location.search.substring(1);
+        var qArray = url.split('&');
+        for (var i = 0; i < qArray.length; i++)
+        {
+            var pArr = qArray[i].split('=');
+            if (pArr[0] == paramName)
+                return pArr[1];
+        }
+    }
+
+    var tstate = "Alabama";
+    if(getParamValue('stname') !== null && typeof getParamValue('stname') !== 'undefined'){
+        tstate = decodeURIComponent((getParamValue('stname') + '').replace(/\+/g, '%20'));
+    }
+
+    // set the dimensions and margins of the graph
+    var margin = {top: 125, right: 125, bottom: 475, left: 150},
+        width = 800 - margin.left - margin.right,
+        height = 725 - margin.top - margin.bottom;
+
+    // append the svg object to the body of the page
+    var svg = d3.select("#my_dataviz")
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform",
+            "translate(" + margin.left + "," + margin.top + ")");
+
+        // Parse the Data
+        var csvfile = "view_state_agi_inflow_outflow_gdp.csv";
+        d3.csv(csvfile, function(data) {
+
+        var keys = ["sum_inflow_agi_all_age","sum_outflow_agi_all_age","net_inflow_all_age","gdp"];
+        var legend_labels = ["Inflow All Ages","Outflow All Ages","Net Inflow All_Ages","GDP"];
+
+        // color palette
+        var color = d3.scaleOrdinal()
+            .domain(keys)
+            .range(d3.schemeSet1);
+
+        //stack the data
+        if (typeof tstate !== 'undefined' && tstate !== null) {
+            data = data.filter(d => d["state_name"] === tstate);
+        }
+        var stackedData = d3.stack()
+            .keys(keys)
+            (data);
+
+        // Add X axis
+        var x = d3.scaleLinear()
+            .domain(d3.extent(data, function(d) { return d.year; }))
+            .range([ 0, width ]);
+        var xAxis = svg.append("g")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(x).ticks(5))
+            .attr("class","axticks");
+
+        // Chart Title
+        svg.append("text")
+            .attr("text-anchor", "end")
+            .attr("x",-margin.left/2)
+            .attr("y", -70 )
+            .text(tstate + ": GDP vs Population growth trend over the years")
+            .attr("class","h1")
+            .attr("text-anchor", "start");
+
+        // Add X axis label:
+        svg.append("text")
+            .attr("x", width/2)
+            .attr("y", height+40 )
+            .style("text-anchor", "middle")
+            .text("Years")
+            .attr("class", "axlabel");
+
+        // Add Y axis label:
+        svg.append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("x", 0 - (height / 2))
+            .attr("y", -100)
+            .attr("dy", "1em")
+            .style("text-anchor", "middle")
+            .text(tstate + " :Population growth")
+            .attr("class","axlabel")
+            .attr("text-anchor", "start");
+
+        // Add Y axis
+        var y_min = d3.min(data, function(d){
+            min_cname = +d[keys[0]];
+
+            keys.forEach(function(c) {
+                    var n = +d[c];
+                    min_cname = (min_cname < n) ? min_cname : n;
+                });
+
+            return min_cname;
+        });
+
+        var y_max = d3.max(data, function(d){
+            max_cname = +d[keys[0]];
+            keys.forEach(function(c) {
+                var n = +d[c];
+                max_cname = (max_cname > n) ? max_cname :n;
+            });
+            return max_cname;
+        });
+
+        var y = d3.scaleLinear()
+            .domain([y_min, y_max*3])
+            .range([height, 0]);
+        svg.append("g")
+            .call(d3.axisLeft(y).ticks(5))
+            .attr("class","axticks");
+
+        // Add a clipPath
+        var clip = svg.append("defs").append("svg:clipPath")
+            .attr("id", "clip")
+            .append("svg:rect")
+            .attr("width", width )
+            .attr("height", height )
+            .attr("x", 0)
+            .attr("y", 0);
+
+        // Add brushing
+        var brush = d3.brushX()
+            .extent( [ [0,0], [width,height] ] )
+            .on("end", updateChart);
+
+        var areaChart = svg.append('g')
+            .attr("clip-path", "url(#clip)");
+
+        // Area generator
+        var area = d3.area()
+            // .defined(d => !isNaN(y(d[1])))
+            .x(function(d) {return x(d.data.year); })
+            .y0(function(d) { return y(d[0]); })
+            .y1(function(d) { return y(d[1]); });
+            // .y(function(d,i) { return (y(d[1])); });
+
+        // Show the areas
+        areaChart
+            .selectAll("mylayers")
+            .data(stackedData)
+            .enter()
+            .append("path")
+            .attr("class", function(d) { return "myArea " + d.key })
+            .style("fill", function(d) { return color(d.key); })
+            .style("stroke", function(d) { return color(d.key); })
+            .style("stroke-width", "9px")
+            // .style("stroke-width", function(d,i) { return color(d.key)*i; })
+            .attr("d", area);
+
+        // Add the brushing
+        areaChart
+            .append("g")
+            .attr("class", "brush")
+            .call(brush);
+
+        var idleTimeout;
+        function idled() { idleTimeout = null; }
+
+        // A function that update the chart
+        function updateChart() {
+            extent = d3.event.selection;
+
+            if(!extent){
+                if (!idleTimeout) return idleTimeout = setTimeout(idled, 350); // This allows to wait a little bit
+                x.domain(d3.extent(data, function(d) { return d.year; }))
+            }else{
+                x.domain([ x.invert(extent[0]), x.invert(extent[1]) ]);
+                areaChart.select(".brush").call(brush.move, null) // This remove the grey brush area as soon as the selection has been done
+            }
+
+            // Update axis and area position
+            xAxis.transition().duration(1000).call(d3.axisBottom(x).ticks(5));
+            areaChart
+                .selectAll("path")
+                .transition().duration(1000)
+                .attr("d", area)
+        }
+
+        // On hovered
+        var highlight = function(d){
+            // reduce opacity of all groups
+            d3.selectAll(".myArea").style("opacity", .1);
+            // expect the one that is hovered
+            d3.select("."+d).style("opacity", 1)
+        }
+
+        // No hovered
+        var noHighlight = function(d){
+            d3.selectAll(".myArea").style("opacity", 1)
+        }
+
+        // Add legend
+        var legend = svg.append("g")
+            .attr("class", "legend")
+            .attr("height", 100)
+            .attr("width", 100)
+            .attr("transform", "translate(" + (margin.left + margin.right / 2) + " ," + (-margin.top) + ')');
+
+            var sym = d3.symbol();
+            legend.selectAll(".legend")
+                .data(keys)
+                .enter()
+                .append("path")
+                .attr("d", sym.size(300).type(d3.symbolCircle))
+                .attr("transform", function (d, i) {
+                    return "translate(" + (i * 125 - 150) + " ," + (340-30) + ")";
+                })
+                .style('fill', d=> color(d));
+
+            legend.selectAll('text')
+                .data(keys)
+                .enter()
+                .append("text")
+                .attr("x", function (d, i) {return i * 140 - 205;}   )
+                .attr("y", 340)
+                .text((d,i) => legend_labels[i])
+                .attr("class","axlabel");
+    })
+</script>
+</html>
