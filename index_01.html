@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CSE6242 Spring 2020: Project</title>
+</head>
+<style>
+    .states {
+        fill: none;
+        stroke: rgb(65, 65, 65);
+        stroke-linejoin: round;
+    }
+    .title {
+        color: #ffffff;
+        fill: #ffffff;
+        font: 24px 'LeagueGothicRegular';
+        font-family: Calibri;
+    }
+
+    .legend {
+        padding: 5px;
+        font: 15px Arial, Helvetica, sans-serif;
+        box-shadow: 2px 2px 1px #888;
+    }
+
+    svg.chart {
+        position: absolute;
+    }
+
+    .tooltip {
+        /*line-height: 1;*/
+        font: 15px Arial, Helvetica, sans-serif;
+        font-weight: normal;
+        padding: 10px;
+        background: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        border-radius: 5px;
+        z-index: 10;
+        pointer-events: none !important;
+
+    }
+
+    .caption {
+
+        text-shadow: 0px 1px 1px #acacac;
+        color: #022d85;
+        font: 24px 'LeagueGothicRegular';
+        font-family: Calibri;
+    }
+
+    .legendtitle {
+
+        font: 15px Arial, Helvetica, sans-serif;
+        font-weight: bold;
+    }
+
+
+    @media print {
+        svg {
+            page-break-after: always;
+        }
+    }
+
+    body {
+        background-image: url('Picture2_washedout.png');
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        background-blend-mode: screen;
+        background-size: cover;
+    }
+
+    h1 {
+        color: #022d85;
+        font: 52px 'LeagueGothicRegular';
+        font-family: Calibri;
+        margin: auto;
+    }
+
+    h2 {
+        text-shadow: 0px 1px 1px #acacac;
+        color: #595959;
+        font: 24px 'LeagueGothicRegular';
+        font-family: Calibri;
+    }
+
+    .content {
+        max-width: 500px;
+        margin: auto;
+    }
+
+    .content1 {
+        max-width: 900px;
+        margin: auto;
+    }
+
+    .leftcontent {
+        width:50%;
+        position: fixed;
+        margin-left: 0px;
+        margin-top: 50px;
+    }
+    .rightcontent {
+        /*max-width: 900px;*/
+        width:50%;
+        left: 925px;
+        right: 0px;
+        margin: auto;
+    }
+    #slidersimple path {
+        box-shadow: 0 0 20px #000000;
+        fill: #022d85;
+        stroke: #022d85;
+        stroke-width: 25px;
+        shape-rendering: auto;
+    }
+
+    #slidersimple line {
+        box-shadow: 0px 0 20px #000000;
+        fill: none;
+        stroke: #333333;
+        stroke-width: 30px;
+        shape-rendering: auto;
+    }
+
+    #slidersimple text {
+        fill: #000000;
+        font: 20px 'LeagueGothicRegular';
+        font-family: Calibri;
+    }
+
+    #wrap1 {
+        background-color: rgba(237,239,255,0);
+        width: 900px;
+        height: 400px;
+        overflow: hidden;
+        position: fixed;
+        top: -265px;
+        bottom: 0px;
+        z-index: 10;
+        display: block;
+    }
+
+    #frame1 {
+        box-shadow: 0 0 10px #595959;
+        position: fixed;
+        width: 900px;
+        height: 400px;
+        zoom: 0.9;
+        scrolling: no;
+        frameborder: 0;
+        -moz-transform: scale(0.9);
+        -moz-transform-origin: 0 0;
+    }
+
+    #tipDiv {
+        box-shadow: 0 0 10px #595959;
+        width: 900px;
+        height: 425px;
+        overflow: hidden;
+        position: fixed;
+        top: 500px;
+        bottom: 0px;
+        display: block;
+        background: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        font: 15px Calibri;
+        font-weight: normal;
+        z-index: 10;
+        zoom: 0.9;
+        -moz-transform: scale(0.9);
+        -moz-transform-origin: 0 0;
+    }
+
+    div.copyright{
+        display:block;
+        position:fixed;
+        bottom:0;
+        right:0;
+        width:100%;
+        background:#eee;
+        opacity: 0.5;
+        /*border:1px solid #ddd;*/
+        font-family: Calibri;
+    }
+
+</style>
+
+<body>
+
+
+<div>
+    <div class="content1"><h1>Immigration across States and GDP trend</h1></div>
+</div>
+
+<div class="leftcontent">
+    <div class="content2" id="slidersimple"></div>
+    <div class="content3" id="mapchart"></div>
+
+</div>
+
+<div id="wrap1" class="rightcontent">
+        <iframe id="frame1" src="state_pop_gdp_by_year_trend_stackedline.html?stname=Alabama" scrolling="no" frameborder="0"></iframe>
+</div>
+
+<div id="tipDiv" class="rightcontent">
+    <div style="margin: 25px">
+        <p><h2 id="tptitle" class="title"></h2></p>
+        <p>Migration to: <div id='tipoutDiv'></div></p>
+        <p>Migration from: <div id='tipinDiv'></div></p>
+    </div>
+</div>
+
+<div class="copyright">
+    <div style="text-align: center;">© 83 Chicago & Friends 2020</div>
+</div>
+
+</body>
+
+<script type="text/javascript" src="../lib/d3.v5.min.js"></script>
+<script type="text/javascript" src="../lib/d3-dsv.min.js"></script>
+<script type="text/javascript" src="../lib/d3-scale-chromatic.v1.min.js"></script>
+<script type="text/javascript" src="../lib/d3-simple-slider.min.js"></script>
+<script type="text/javascript" src="../lib/d3-tip.min.js"></script>
+<script type="text/javascript" src="../lib/topojson.v2.min.js"></script>
+<script type="text/javascript" src="../lib/d3-fetch.min.js"></script>
+
+<script type="text/javascript" >
+
+    function get_st_pop_gdp(stname){
+
+        var iframe1 = document.getElementById('frame1');
+        iframe1.src = "state_pop_gdp_by_year_trend_stackedline.html?stname="+stname;
+    }
+</script>
+
+<script>
+    const margin = {top: -50, right: 150, bottom: 100, left: 100}; //margin
+    const w = 1500 - margin.left - margin.right; //width
+    const h = 800 - margin.top - margin.bottom; //height
+    const padding = 30; //padding
+
+    var nf = d3.formatPrefix(",.1", 1e3);
+
+    //Circle size
+    var circleSize = d3.scaleLinear().range([0, 1000]).domain([0, 8000]);
+
+    //Path width
+    var pathWidth = d3.scaleLinear().range([3, 10]).domain([0, 10000]);
+
+    //Projection for the USA
+    var projection = d3.geoAlbersUsa();
+
+    // geo path
+    var path = d3.geoPath()
+        .projection(projection);
+
+    //scale domain range
+    var sdrange = [100, 300, 1000, 3000, 4000, 10000];
+
+    // map color scheme
+    var colorScale = d3.scaleLinear()
+        .domain(sdrange).nice(9)
+        .range(d3.schemeReds[9]);
+
+    var symbolScale = d3.scaleOrdinal()
+        .domain(sdrange)
+        .range([d3.symbolSquare, d3.symbolDiamond, d3.symbolTriangle,
+            d3.symbolCircle, d3.symbolCross, d3.symbolStar, d3.symbolWye]);
+
+    // SVG canvas
+    var svg = d3.select("#mapchart")
+        .append("svg")
+        .attr("class", "chart")
+        .attr("width", w + margin.left + margin.right)
+        .attr("height", h + margin.bottom);
+
+    var default_st_name = "Arizona";
+
+    //Read the csv
+    var csvfile = "tb_state_to_state_migrations_filtered2.csv";
+
+    d3.csv(csvfile, d3.autoType).then(function (data) {
+        var years = ["2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018"];
+
+        //Data formatting for map chart
+        function get_formatted_data(data){
+            var yeardatas = [];
+            data.forEach(function (e, j) {
+                var yeardata = d3.map();
+                yeardata["State_from"] = data[j]["State_from"];
+                yeardata["State_to"] = data[j]["State_to"];
+                years.forEach(function (y) {
+                    if(data[j]["year"].toString()===y) {
+                        yeardata[y] = data[j]["estimate"];
+                    }
+                });
+                yeardatas.push(yeardata);
+            });
+            data = join_objects(yeardatas, yeardatas);
+            return data;
+        }
+
+        function join_objects() {
+            var idmap = {};
+            for(var i = 0; i < arguments.length; i++) {
+                for(var j = 0; j < arguments[i].length; j++) {
+                    var id_columns = arguments[i][j]['State_from']+"_"+arguments[i][j]['State_to'];
+                    if(!idmap[id_columns]) {
+                        idmap[id_columns] = {};
+                    }
+                    for(key in arguments[i][j]) {
+                        idmap[id_columns][key] = arguments[i][j][key];
+                    }
+                }
+            }
+            var arr = [];
+            for(k in idmap) {
+                arr.push(idmap[k]);
+            }
+            return arr;
+        }
+
+        data = get_formatted_data(data);
+        console.log(data);
+
+        // Slider
+        var sliderStep = d3
+            .sliderBottom()
+            .min(d3.min(years))
+            .max(d3.max(years))
+            .width(w / 2)
+            .tickFormat(d3.format('d'))
+            .ticks(years.length)
+            .step(1)
+            .default(1)
+            .on('onchange', val => {
+                onSliderChangeEvent(d3.format('d')(val))
+            });
+
+        var gStep = d3
+            .select("div#slidersimple")
+            .append("svg")
+            .attr("width", w)
+            .attr("height", 0 - 3 * margin.top)
+            .append("g")
+            .attr("class", "d3slider")
+            .attr("transform", "translate(" + margin.left + ",  " + -margin.top + ")");
+
+        gStep.append("text")
+            .attr("x", margin.left - margin.right - 20)
+            .attr("y", 5)
+            .text("Year");
+
+        gStep.call(sliderStep);
+        onSliderChangeEvent(years[0]);
+
+
+        //On slider change event handler
+        function onSliderChangeEvent(sldValue) {
+            // get_st_mgr_count(sldValue);
+
+            d3.json("states-10m.json", d3.autoType).then(function (jsondata) {
+                // cleanup svg
+                clear_screen();
+
+                var jd = jsondata.objects.states.geometries;
+                jd.forEach(function (d) {
+                    var jsonState = d.properties.name;
+                    data.forEach(function (e, j) {
+
+                        if (data[j]["State_to"] === jsonState) {
+                            d.properties.value = data[j][sldValue];
+                            d.properties.State_from = data[j]["State_from"];
+                            d.properties.State_to = data[j]["State_to"];
+                            d.properties.estimates = data[j][sldValue];
+                        } else {
+                            d.properties.State_from = "";
+                            d.properties.State_to = "";
+                            d.properties.estimates = "";
+                        }
+                    });
+
+                });
+
+
+                //Define tooltip
+                var tip = d3.tip()
+                    .attr('class', 'tooltip');
+
+                //Chart texts
+                chartTexts(svg, topojson.feature(jsondata,
+                    jsondata.objects.states).features, "",
+                    "", "", "", "", colorScale,
+                    symbolScale, false, true, true);
+
+                //Draw map
+                var map = draw_map(data, jsondata, sldValue);
+
+                //Color map
+                color_map(map);
+
+                //Draw State migration trend
+                draw_st_mgrtrend(default_st_name,data);
+
+                //Draw GDP vs State Population growth trend over year
+                get_st_pop_gdp(default_st_name);
+
+                //Draw chart indicators
+                draw_indicators(data, jsondata, sldValue,default_st_name);
+
+                //Draw raw map chart
+                function draw_map(data, jsondata, sldValue) {
+                    var map = svg.append("g")
+                        .attr("class", "states")
+                        .selectAll("path")
+                        .data(topojson.feature(jsondata, jsondata.objects.states).features)
+                        .enter().append("path")
+                        .attr("fill", "rgba(0,16,199,0.88)")
+                        .attr("d", path)
+                        .attr("fill", "rgba(0,16,199,0.88)");
+                    return map;
+                }
+
+                //Color map chart
+                function color_map(map) {
+                    map.attr("fill", d => colorScale(d.properties.value))
+                        .attr("d", path)
+                        .attr("fill", function (d) {
+                                if (d.properties.value !== null && typeof d.properties.value !== 'undefined') {
+                                    return colorScale(d.properties.value);
+                                } else {
+                                    return "rgb(238,238,238)";
+                                }
+                            }
+                        )
+                        .on('mouseover', function (d) {
+                            mouseovered(d, data);
+                        })
+                        .on('mouseout', mouseouted)
+                        .on("dblclick", function (d) {
+                            dblclick(d, data, jsondata, sldValue, d.properties.name);
+                        });
+                    return map;
+                }
+
+
+                //Tooltip functions
+                function draw_st_mgrtrend(stname, data) {
+                    document.getElementById("tptitle").innerHTML = sldValue + ": " + stname ;
+                    clear_tooltip();
+
+                    var from_data = data.filter(f => f["State_from"] === stname && f[sldValue] > 0);
+                    var to_data = data.filter(f => f["State_to"] === stname && f[sldValue] > 0);
+
+                    var from_estimate = from_data.map(function (st) {
+                        var d = {State_from: st["State_to"], "estimate": st[sldValue]};
+                        return d;
+                    });
+
+                    var to_estimate = to_data.map(function (st) {
+                        var d = {State_to: st["State_from"], "estimate": st[sldValue]};
+                        return d;
+                    });
+
+                    var svg_width = 900;
+                    var svg_height = 50;
+                    var margin = {left: 20, right: -100, top: 30, bottom: 40};
+
+                    if (from_estimate !== null && typeof from_estimate !== 'undefined' && from_estimate.length > 0) {
+
+                        var yScale = d3.scaleLinear().range([svg_height, 0]).domain([1, d3.max(from_estimate).estimate*20]);
+                        var xScale = d3.scaleBand()
+                            .domain(from_estimate.map(d => d.State_from))
+                            .range([50, svg_width-100]);
+
+                        var xAxis = d3.axisBottom()
+                            .scale(xScale)
+                            .tickFormat(function (d) {
+                                return d;
+                            });
+
+                        var tipSVG = d3.select("#tipoutDiv")
+                            .append("svg")
+                            .attr("class", "tooltipsvg1")
+                            .attr("width", svg_width + margin.left + margin.right)
+                            .attr("height", svg_height + margin.top + margin.bottom);
+
+
+                        var g = tipSVG.append("g");
+
+                        g.append("g")
+                            .attr("transform", "translate(0," + svg_height + ")")
+                            .call(xAxis)
+                            .selectAll("text")
+                            .attr("text-anchor", "end")
+                            .attr("transform", "rotate(-45) translate(-7,-10)");
+
+                        g.selectAll("rect")
+                            .data(from_estimate)
+                            .enter()
+                            .append("rect")
+                            .attr("fill", "steelblue")
+                            .attr("width", xScale.bandwidth() - 2)
+                            .attr("x", d => xScale(d.State_from))
+                            .attr("height", d => (svg_height - yScale(d.estimate)))
+                            .on("mouseover", function(d,i) {
+                                d3.select(this)
+                                    .attr("fill", "orange")
+                                    .append("title")
+                                    .text(d => nf(d.estimate));
+                            })
+                            .on("mouseout", function(d,i) {
+                                d3.select(this)
+                                    .attr("fill", "steelblue");
+                            })
+                            .transition()
+                            .duration(1000)
+                            .attr("y", d => yScale(d.estimate));
+
+                        g.append("g").selectAll("text")
+                            .data(from_estimate)
+                            .enter()
+                            .append("text")
+                            .text(d => nf(d.estimate))
+                            .attr("y", d => (yScale(d.estimate)) - 2)
+                            .attr("x", d => xScale(d.State_from))
+                            .style("fill", "white")
+                            .style("font-size", "8px");
+
+
+
+                    }
+
+                    if (to_estimate !== null && typeof to_estimate !== 'undefined' && to_estimate.length > 0) {
+                        // console.log(d3.max(to_estimate).estimate);
+                        yScale = d3.scaleLinear().range([svg_height, 0]).domain([1, d3.max(to_estimate).estimate*20]);
+                        xScale = d3.scaleBand()
+                            .domain(to_estimate.map(d => d.State_to))
+                            .range([50, svg_width-100]);
+                        xAxis = d3.axisBottom()
+                            .scale(xScale)
+                            .tickFormat(function (d) {
+                                return d;
+                            });
+
+                        tipSVG = d3.select("#tipinDiv")
+                            .append("svg")
+                            .attr("class", "tooltipsvg2")
+                            .attr("width", svg_width + margin.left + margin.right)
+                            .attr("height", svg_height + margin.top + margin.bottom);
+
+
+                        g = tipSVG.append("g");
+                        g.append("g")
+                            .attr("transform", "translate(0," + svg_height + ")")
+                            .call(xAxis)
+                            .selectAll("text")
+                            .attr("text-anchor", "end")
+                            .attr("transform", "rotate(-45)translate(-7,-10)");
+
+                        g.selectAll("rect")
+                            .data(to_estimate)
+                            .enter()
+                            .append("rect")
+                            .attr("fill", "red")
+                            .attr("width", xScale.bandwidth() - 2)
+                            .attr("x", d => xScale(d.State_to))
+                            .attr("height", d => (svg_height - yScale(d.estimate)))
+                            .on("mouseover", function(d,i) {
+                                d3.select(this)
+                                    .attr("fill", "orange")
+                                    .append("title")
+                                    .text(d => nf(d.estimate));
+                            })
+                            .on("mouseout", function(d,i) {
+                                d3.select(this)
+                                    .attr("fill", "red");
+                            })
+                            .transition()
+                            .duration(1000)
+                            .attr("y", d => yScale(d.estimate));
+
+                        g.append("g").selectAll("text")
+                            .data(to_estimate)
+                            .enter()
+                            .append("text")
+                            .text(d => nf(d.estimate))
+                            .attr("y", d => (yScale(d.estimate)) - 2)
+                            .attr("x", d => xScale(d.State_to))
+                            .style("fill", "white")
+                            .style("font-size", "8px");
+                    }
+                }
+
+                //mouseover function
+                function mouseovered(d, data) {
+                    get_st_pop_gdp(d.properties.name);
+                    draw_st_mgrtrend(d.properties.name, data);
+                }
+
+                //mouseout function
+                function mouseouted(d) {
+                    // map.classed("mouseout", tip.hide);
+                }
+
+                //State double click action
+                function dblclick(d, data, jsondata, sldValue, tstate) {
+                    d3.select("body").selectAll(".states").remove();
+                    clear_indicatores();
+                    clear_tooltip();
+                    map = draw_map(data, jsondata, sldValue, tstate);
+                    color_map(map);
+
+                    draw_indicators(data, jsondata, sldValue, tstate);
+                }
+
+                //Draw Chart Indicators
+                function draw_indicators(data, jsondata, sldValue, tstate) {
+                    var features = topojson.feature(jsondata, jsondata.objects.states).features;
+                    var cnt = {};
+                    var centroids = features.map(function (feature) {
+                        var k = feature.properties.name;
+                        var v = path.centroid(feature);
+                        cnt[k] = v;
+                        return cnt;
+                    });
+
+                    if (typeof tstate !== 'undefined' && tstate !== null) {
+                        data = data.filter(d => d["State_from"] === tstate || d["State_to"] === tstate);
+                    }
+
+
+                    //Add State Text
+                    svg.selectAll("states")
+                        .attr("class", "caption")
+                        .data(data)
+                        .enter()
+                        .append("text")
+                        .text(d => [d["State_to"]][0])
+                        .attr("x", d => centroids[0][d["State_to"]][0])
+                        .attr("y", d => centroids[0][d["State_to"]][1])
+                        .attr("text-anchor", "middle")
+                        .attr('fill', 'black')
+                        .attr('font-family', 'Calibri')
+                        .attr('font-size', '10px');
+
+                    //Draw Arrowlines
+                    svg.append("g")
+                        .attr("class", "arrowlines").selectAll("states")
+                        .data(data)
+                        .enter()
+                        .append("path")
+                        .attr("class", "mgrpath")
+                        .attr("id", function (d, i) {
+                            return "path_" + i;
+                        })
+                        .attr("d", function (d) {
+                            var d_source_x;
+                            var d_source_y;
+                            var d_target_x;
+                            var d_target_y;
+                            var from_s = (d.State_from).trim();
+                            var to_s = (d.State_to).trim();
+                            var mgr_estimates = d[sldValue];
+                            if (mgr_estimates > 0) {
+                                d_source_x = centroids[0][from_s][0];
+                                d_source_y = centroids[0][from_s][1];
+                                d_target_x = centroids[0][to_s][0];
+                                d_target_y = centroids[0][to_s][1];
+                                var dx = d_target_x - d_source_x,
+                                    dy = d_target_y - d_source_y,
+                                    dr = Math.sqrt((dx * dx + dy * dy) / 1.5);
+                                return "M" + d_source_x + "," + d_source_y + "A" + dr + "," + dr +
+                                    " 0 0,1 " + d_target_x + "," + d_target_y;
+                            }
+                        })
+                        .attr("stroke", "rgba(0,16,199,0.88)")
+                        .attr("stroke-width", "1px")
+                        .attr("fill", "none")
+                        .attr("opacity", 0.5)
+                        .attr("stroke-linecap", "round")
+                        .call(transition_arrow);
+
+                    //Arrowlines Animation
+                    function transition_arrow(path) {
+                        path.transition()
+                            .duration(1500)
+                            .attrTween("stroke-dasharray", drawDash);
+                    }
+
+                    function drawDash() {
+                        var l = this.getTotalLength(),
+                            i = d3.interpolateString("0," + l, l + "," + l);
+                        return function (t) {
+                            return i(t);
+                        };
+                    }
+
+                    //Add and Animate Arrowhead marker
+                    var lpath = svg.selectAll(".arrowlines").selectAll("path");
+                    var lpaths = [];
+                    lpath.each(function (d, i) {
+                        var dv = this.getAttribute('d');
+                        if (typeof dv !== 'undefined' && dv !== null) {
+                            lpaths.push(this);
+                        }
+                    });
+
+                    var marker = svg.append("g")
+                        .attr("class", "arrows").selectAll("path")
+                        .data(lpaths)
+                        .enter()
+                        .append("image")
+                        .attr("xlink:href", "rocket.png")
+                        .attr("transform", translateStartPoints)
+                        .attr("width", 14)
+                        .attr("height", 16)
+                        .transition()
+                        .duration(1500)
+                        .attrTween("transform", translateAlong);
+
+                    function translateStartPoints(d) {
+                        var p = pathStartPoint(d);
+                        p = p[0].split(",");
+                        return "translate(" + p[0] + "," + p[1] + ")";
+                    }
+
+                    function pathStartPoint(path) {
+                        var d = path.getAttribute('d'),
+                            d_splitted = d.split("M");
+                        return d_splitted[1].split("A");
+                    }
+
+                    function translateAlong(path) {
+                        var l = path.getTotalLength();
+                        var t0 = 0;
+                        return function (t) {
+                            var p0 = path.getPointAtLength(t0 * l);//previous point
+                            var p = path.getPointAtLength(t * l);////current point
+                            var angle = Math.atan2(p.y - p0.y, p.x - p0.x) * 180 / Math.PI;//angle for tangent
+                            t0 = t;
+                            //Shifting center to center of rocket
+                            var centerX = p.x - 10,
+                                centerY = p.y - 12;
+                            return "translate(" + centerX + "," + centerY + ")rotate(" + angle + " 10" + " 12" + ")";
+                        }
+                    }
+
+
+                    //Append Arrowline texts
+                    svg.selectAll("states")
+                        .data(data)
+                        .enter()
+                        .append("text")
+                        .attr("class", "curvetext")
+                        .attr("x", function (d) {
+                                var d_source_x;
+                                var d_target_x;
+                                var diff;
+                                var from_s = d.State_from;
+                                var to_s = d.State_to;
+
+                                if (typeof from_s !== 'undefined' && from_s !== null
+                                    && typeof to_s !== 'undefined' && to_s !== null) {
+                                    d_source_x = centroids[0][from_s][0];
+                                    d_target_x = centroids[0][to_s][0];
+                                    diff = d_target_x - d_source_x;
+                                    if (diff > 0) {
+                                        return (d_target_x - d_source_x + 50) / 2;
+                                    } else {
+                                        return (d_source_x - d_target_x + 50) / 2;
+                                    }
+                                }
+                            }
+                        )   //Move the text from the start angle of the arc
+                        .attr("dy", -5) //Move the text down
+                        .append("textPath")
+                        .attr("xlink:href", function (d, i) {
+                            var mgr_estimates = d[sldValue];
+                            if (typeof mgr_estimates !== 'undefined' && mgr_estimates !== null && mgr_estimates > 0) {
+                                return "#path_" + i;
+                            }
+                        })
+                        .attr("text-anchor", "middle")
+                        .attr("font-family", "Calibri")
+                        .style("font-size", "13px")
+                        .style("fill", "#000000")
+                        .text(d => nf(d[sldValue]));
+
+                }
+
+            });
+
+        }
+
+        //SVG cleanup
+        function clear_screen() {
+            d3.select("body").selectAll(".states").remove();
+            clear_tooltip();
+            clear_indicatores();
+        }
+        function clear_tooltip() {
+            d3.select("body").selectAll(".tooltip").remove();
+            d3.select("body").selectAll(".tooltipsvg1").remove();
+            d3.select("body").selectAll(".tooltipsvg2").remove();
+        }
+        function clear_indicatores() {
+            d3.select("body").selectAll(".arrowlines").remove();
+            d3.select("body").selectAll(".arrows").remove();
+            d3.select("body").selectAll(".chartext").remove();
+            d3.select("body").selectAll(".mgrpath").remove();
+            d3.select("body").selectAll(".circ").remove();
+            d3.select("body").selectAll(".curve").remove();
+            d3.select("body").selectAll(".curvetext").remove();
+            d3.select("body").selectAll(".marker").remove();
+        }
+
+        //Chart area texts
+        function chartTexts(svg, data, xAxis = null, yAxis = null,
+                            graphTitle, xLabel,
+                            yLabel, cScale, sScale,
+                            isSymbol = false, showGTUser = false, isLegend = false) {
+            var chartextsvg = svg.append("g")
+                .attr("class", "chartext");
+            // graph title
+            chartextsvg.append("text")
+                .attr("x", (w / 2))
+                .attr("y", -margin.top / 2)
+                .attr("text-anchor", "middle")
+                .text(graphTitle)
+                .attr("class", "title");
+
+        }
+    });
+
+</script>
+
+</html>
