@@ -353,8 +353,15 @@
             width = 800 - marginsk.left - marginsk.right,
             height = 725 - marginsk.top - marginsk.bottom;
 
-        // append the svg object to the body of the page
+        var keys = ["sum_inflow_agi_all_age","sum_outflow_agi_all_age","net_inflow_all_age","gdp"];
+        var legend_labels = ["Inflow All Ages","Outflow All Ages","Net Inflow All_Ages","GDP"];
 
+        // color palette
+        var color = d3.scaleOrdinal()
+            .domain(keys)
+            .range(d3.schemeSet1);
+
+        // append the svg object to the body of the page
         var svgsatck = d3.select("#my_dataviz")
             .append("svg")
             .attr("id","stksvg")
@@ -363,6 +370,7 @@
             .append("g")
             .attr("transform",
                 "translate(" + marginsk.left + "," + marginsk.top + ")");
+
 
         // Parse the Data
         // var csvfile = "view_state_agi_inflow_outflow_gdp.csv";
@@ -535,14 +543,14 @@
             };
 
             // Add legend
-            var legend = svgsatck.append("g")
+            var legendstsk = svgsatck.append("g")
                 .attr("class", "legend")
                 .attr("height", 100)
                 .attr("width", 100)
-                .attr("transform", "translate(" + (marginsk.left + marginsk.right / 2) + " ," + (-margin.top) + ')');
+                .attr("transform", "translate(" + (marginsk.left + marginsk.right / 2) + " ," + (-marginsk.top) + ')');
 
             var sym = d3.symbol();
-            legend.selectAll(".legend")
+            legendstsk.selectAll(".legend")
                 .data(keys)
                 .enter()
                 .append("path")
@@ -552,7 +560,7 @@
                 })
                 .style('fill', d=> color(d));
 
-            legend.selectAll('text')
+            legendstsk.selectAll('text')
                 .data(keys)
                 .enter()
                 .append("text")
